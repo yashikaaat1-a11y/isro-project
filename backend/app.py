@@ -15,8 +15,10 @@ import base64
 import logging
 import time
 from typing import Optional
+from contextlib import asynccontextmanager
 
 import numpy as np
+import uvicorn
 from PIL import Image, ImageFilter
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,22 +31,7 @@ MODEL_ID = "depth-anything/Depth-Anything-V2-Small-hf"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("depthwizard")
 
-# ─── FastAPI App ───────────────────────────────────────────────────────────────
-app = FastAPI(
-    title="DepthWizard API",
-    description="Single-View Monocular Depth Estimation for ISRO Disaster Management",
-    version="1.0.0",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ─── Model Loading ─────────────────────────────────────────────────────────────
+# ─── Model Loading & Lifespan ──────────────────────────────────────────────────
 depth_pipeline = None
 
 
@@ -55,25 +42,57 @@ def load_model():
         return depth_pipeline
 
     if MOCK_MODE:
-        logger.info("[WARN] Running in MOCK MODE - no model loaded")
+        logger.info("⚠️  Running in MOCK MODE — no model loaded")
         return None
 
     try:
         from transformers import pipeline
         import torch
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        logger.info(f"Loading {MODEL_ID} on {device}...")
+        device = 0 if torch.cuda.is_available() else -1
+        device_name = "CUDA (GPU 0)" if device == 0 else "CPU"
+        logger.info(f"Loading {MODEL_ID} on {device_name}...")
         depth_pipeline = pipeline(
             task="depth-estimation",
             model=MODEL_ID,
             device=device,
         )
-        logger.info("[OK] Model loaded successfully")
+        logger.info("✅ Model loaded successfully")
         return depth_pipeline
     except Exception as e:
-        logger.warning(f"[WARN] Could not load model ({e}), falling back to MOCK mode")
+        logger.warning(f"⚠️ Could not load model ({e}), falling back to MOCK mode")
         return None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI application lifespan event handler."""
+    logger.info("=" * 60)
+    logger.info("  DepthWizard API — Starting Up")
+    logger.info(f"  Mock Mode: {MOCK_MODE}")
+    logger.info(f"  Model: {MODEL_ID}")
+    logger.info("=" * 60)
+    if not MOCK_MODE:
+        load_model()
+    yield
+    logger.info("  DepthWizard API — Shutting Down")
+
+
+# ─── FastAPI App ───────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="DepthWizard API",
+    description="Single-View Monocular Depth Estimation for ISRO Disaster Management",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ─── Utility Functions ─────────────────────────────────────────────────────────
@@ -247,13 +266,5 @@ async def generate_depth(
     return JSONResponse(content=response_data)
 
 
-# ─── Startup ───────────────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup():
-    logger.info("=" * 60)
-    logger.info("  DepthWizard API — Starting Up")
-    logger.info(f"  Mock Mode: {MOCK_MODE}")
-    logger.info(f"  Model: {MODEL_ID}")
-    logger.info("=" * 60)
-    if not MOCK_MODE:
-        load_model()
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
