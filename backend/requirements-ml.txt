@@ -1,0 +1,5 @@
+# Neural depth engine (Depth Anything V2-Small). Without these the service
+# falls back to its procedural mock engine automatically.
+-r requirements.txt
+torch>=2.1
+transformers>=4.45
