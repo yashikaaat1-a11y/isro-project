@@ -40,6 +40,11 @@ const state = {
   currentDepthData: null,
   terrainLoaded: false,
   depthScale: AUTO_DEPTH_SCALE,
+  baseDepthScale: AUTO_DEPTH_SCALE,
+  depthExaggeration: 1.0,
+  depthCanvas: null,
+  terrainAnalytics: null,
+  depthHeightRange: null, // { min, max } for flood simulation
 
   // Drone controls
   drone: {
@@ -512,6 +517,120 @@ function createRoughnessMap(depthCanvas) {
  * The goal is a realistic elevation profile — not dramatic spikes.
  * For a 100-unit wide terrain, scale≈8 means the tallest peak is ~8 units.
  */
+/**
+ * Derive slope / flood-prone analytics from raw depth canvas (for triage UI).
+ */
+function computeTerrainAnalytics(depthCanvas) {
+  const size = Math.min(256, depthCanvas.width, depthCanvas.height);
+  const tmp = document.createElement('canvas');
+  tmp.width = size;
+  tmp.height = size;
+  tmp.getContext('2d').drawImage(depthCanvas, 0, 0, size, size);
+  const data = tmp.getContext('2d').getImageData(0, 0, size, size).data;
+
+  const slopes = [];
+  let minH = 255;
+  let maxH = 0;
+
+  const getV = (x, y) => data[(y * size + x) * 4];
+
+  for (let y = 1; y < size - 1; y++) {
+    for (let x = 1; x < size - 1; x++) {
+      const v = getV(x, y);
+      if (v < minH) minH = v;
+      if (v > maxH) maxH = v;
+
+      const gx =
+        -getV(x - 1, y - 1) - 2 * getV(x - 1, y) - getV(x - 1, y + 1) +
+        getV(x + 1, y - 1) + 2 * getV(x + 1, y) + getV(x + 1, y + 1);
+      const gy =
+        -getV(x - 1, y - 1) - 2 * getV(x, y - 1) - getV(x + 1, y - 1) +
+        getV(x - 1, y + 1) + 2 * getV(x, y + 1) + getV(x + 1, y + 1);
+      const mag = Math.sqrt(gx * gx + gy * gy);
+      const deg = Math.min(90, (mag / 400) * 45);
+      slopes.push(deg);
+    }
+  }
+
+  const maxSlope = slopes.length ? Math.max(...slopes) : 0;
+  const meanSlope = slopes.length
+    ? slopes.reduce((a, b) => a + b, 0) / slopes.length
+    : 0;
+  const highRiskPct = slopes.length
+    ? (slopes.filter((s) => s >= 30).length / slopes.length) * 100
+    : 0;
+
+  return {
+    maxSlope,
+    meanSlope,
+    highRiskPct,
+    minH,
+    maxH,
+  };
+}
+
+function applyDepthScale() {
+  const scale = state.baseDepthScale * state.depthExaggeration;
+  state.depthScale = scale;
+  terrainMaterial.displacementScale = scale;
+  wireframeMaterial.displacementScale = scale;
+  updateDepthInfo(scale);
+}
+
+function computeSubmergedAreaPercent(floodVal) {
+  if (!state.depthCanvas || !state.depthHeightRange) return 0;
+  const { minH, maxH } = state.depthHeightRange;
+  const span = maxH - minH || 1;
+  const waterNorm = floodVal / 100;
+
+  const w = state.depthCanvas.width;
+  const h = state.depthCanvas.height;
+  const data = state.depthCanvas.getContext('2d').getImageData(0, 0, w, h).data;
+  let submerged = 0;
+  let total = 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const v = data[i];
+    const elevNorm = (v - minH) / span;
+    total++;
+    if (elevNorm <= waterNorm) submerged++;
+  }
+
+  return total ? (submerged / total) * 100 : 0;
+}
+
+function downloadCanvasAsPng(canvas, filename) {
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function updateExportButtons() {
+  const depthBtn = document.getElementById('btn-export-depth');
+  const slopeBtn = document.getElementById('btn-export-slope');
+  if (depthBtn) depthBtn.disabled = !state.depthCanvas;
+  if (slopeBtn) slopeBtn.disabled = !textures.slope;
+}
+
+function updateTriageSummary() {
+  const el = document.getElementById('triage-summary');
+  if (!el || !state.terrainAnalytics) return;
+
+  const a = state.terrainAnalytics;
+  const api = state.currentDepthData;
+  const floodProne = api?.flood_area_pct;
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="triage-title">Disaster triage (derived from depth)</div>
+    <div class="stat-row"><span>Max slope (est.)</span><span>${a.maxSlope.toFixed(1)}°</span></div>
+    <div class="stat-row"><span>Mean slope (est.)</span><span>${a.meanSlope.toFixed(1)}°</span></div>
+    <div class="stat-row"><span>High-risk slope area (≥30°)</span><span>${a.highRiskPct.toFixed(1)}%</span></div>
+    ${floodProne !== undefined ? `<div class="stat-row"><span>Low-elevation flood-prone (backend)</span><span>${floodProne}%</span></div>` : ''}
+  `;
+}
+
 function computeAutoDepthScale(depthCanvas) {
   const size = 256;
   const tmpCanvas = document.createElement('canvas');
@@ -753,18 +872,45 @@ function applyTerrainTextures(rawDepthCanvas) {
 
   // 5. Auto-compute displacement scale from the smoothed map
   const autoScale = computeAutoDepthScale(smoothedCanvas);
-  state.depthScale = autoScale;
-  terrainMaterial.displacementScale = autoScale;
+  state.baseDepthScale = autoScale;
+  applyDepthScale();
 
   // 6. Sync wireframe mesh
   wireframeMaterial.displacementMap = smoothedDepthTex;
-  wireframeMaterial.displacementScale = autoScale;
 
   terrainMaterial.needsUpdate = true;
   wireframeMaterial.needsUpdate = true;
 
-  // Update the depth info display
-  updateDepthInfo(autoScale);
+  state.depthCanvas = rawDepthCanvas;
+  state.terrainAnalytics = computeTerrainAnalytics(rawDepthCanvas);
+  state.depthHeightRange = {
+    minH: state.terrainAnalytics.minH,
+    maxH: state.terrainAnalytics.maxH,
+  };
+  updateRiskStats();
+  updateTriageSummary();
+  updateExportButtons();
+
+  const floodVal = parseFloat(document.getElementById('flood-slider')?.value || '0');
+  document.getElementById('flood-area-pct').textContent =
+    `${computeSubmergedAreaPercent(floodVal).toFixed(1)}%`;
+
+  refreshOutputPreviews();
+}
+
+function refreshOutputPreviews() {
+  if (!state.depthCanvas) return;
+  const panel = document.getElementById('panel-output');
+  panel.style.display = 'block';
+  document.getElementById('output-depth').src = state.depthCanvas.toDataURL('image/png');
+  if (textures.slope?.image) {
+    const img = textures.slope.image;
+    if (img instanceof HTMLCanvasElement) {
+      document.getElementById('output-slope').src = img.toDataURL('image/png');
+    } else if (img?.src) {
+      document.getElementById('output-slope').src = img.src;
+    }
+  }
 }
 
 /**
@@ -1141,8 +1287,10 @@ function showOutputPanel(data) {
     <div>Min: ${data.min_val} | Max: ${data.max_val}</div>
     <div>Mean: ${data.mean_val?.toFixed(1)} | Std: ${data.std_val?.toFixed(1)}</div>
     <div>Mode: ${data.mode} | Time: ${data.inference_time_ms}ms</div>
-    ${data.flood_area_pct !== undefined ? `<div>Flood Risk Area: ${data.flood_area_pct}%</div>` : ''}
+    ${data.flood_area_pct !== undefined ? `<div>Flood-prone low areas (≤20th pct.): ${data.flood_area_pct}%</div>` : ''}
   `;
+  updateTriageSummary();
+  updateExportButtons();
 }
 
 function updateStatusRibbon(status, source = '') {
@@ -1173,9 +1321,11 @@ function updateDepthInfo(scale) {
 }
 
 function updateRiskStats() {
-  document.getElementById('max-slope').textContent = '42.3°';
-  document.getElementById('risk-area').textContent = '18.7%';
-  document.getElementById('mean-slope').textContent = '22.1°';
+  const a = state.terrainAnalytics;
+  if (!a) return;
+  document.getElementById('max-slope').textContent = `${a.maxSlope.toFixed(1)}°`;
+  document.getElementById('risk-area').textContent = `${a.highRiskPct.toFixed(1)}%`;
+  document.getElementById('mean-slope').textContent = `${a.meanSlope.toFixed(1)}°`;
 }
 
 /**
@@ -1315,9 +1465,40 @@ floodSlider.addEventListener('input', () => {
   waterMesh.position.y = val > 0 ? waterY : -10;
   waterMesh.visible = val > 0;
 
-  // Estimate submerged area percentage
-  const submergedPct = Math.min(val * 1.2, 100).toFixed(1);
-  document.getElementById('flood-area-pct').textContent = `${submergedPct}%`;
+  const submergedPct = computeSubmergedAreaPercent(val);
+  document.getElementById('flood-area-pct').textContent = `${submergedPct.toFixed(1)}%`;
+});
+
+// ─── Vertical Exaggeration ───
+const exaggerationSlider = document.getElementById('exaggeration-slider');
+const exaggerationValue = document.getElementById('exaggeration-value');
+if (exaggerationSlider) {
+  exaggerationSlider.addEventListener('input', () => {
+    state.depthExaggeration = parseFloat(exaggerationSlider.value);
+    exaggerationValue.textContent = `${state.depthExaggeration.toFixed(1)}×`;
+    applyDepthScale();
+    const floodVal = parseFloat(floodSlider.value);
+    document.getElementById('flood-area-pct').textContent =
+      `${computeSubmergedAreaPercent(floodVal).toFixed(1)}%`;
+  });
+}
+
+// ─── Export depth / slope maps ───
+document.getElementById('btn-export-depth')?.addEventListener('click', () => {
+  if (state.depthCanvas) {
+    downloadCanvasAsPng(state.depthCanvas, `depthwizard_depth_${Date.now()}.png`);
+  }
+});
+
+document.getElementById('btn-export-slope')?.addEventListener('click', () => {
+  if (textures.slope?.image) {
+    const img = textures.slope.image;
+    const c = document.createElement('canvas');
+    c.width = img.width || 512;
+    c.height = img.height || 512;
+    c.getContext('2d').drawImage(img, 0, 0);
+    downloadCanvasAsPng(c, `depthwizard_slope_${Date.now()}.png`);
+  }
 });
 
 // ─── Texture Mode ───
@@ -1367,7 +1548,7 @@ document.getElementById('btn-wireframe').addEventListener('click', () => setRend
 document.getElementById('anchor-pick-btn').addEventListener('click', () => {
   state.isPickingAnchor = true;
   document.body.classList.add('picking-mode');
-  document.getElementById('anchor-pick-btn').textContent = '🎯 Click on terrain...';
+  document.getElementById('anchor-pick-btn').textContent = 'Click a point on the terrain';
 });
 
 canvas.addEventListener('click', (event) => {
@@ -1387,7 +1568,7 @@ canvas.addEventListener('click', (event) => {
     document.getElementById('anchor-input-group').style.display = 'block';
     state.isPickingAnchor = false;
     document.body.classList.remove('picking-mode');
-    document.getElementById('anchor-pick-btn').textContent = '🎯 Pick Point on Map';
+    document.getElementById('anchor-pick-btn').textContent = 'Pick point on terrain';
   }
 });
 

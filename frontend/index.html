@@ -7,7 +7,7 @@
   <title>DepthWizard — ISRO Depth Estimation & 3D Terrain</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 </head>
@@ -19,9 +19,8 @@
         <svg viewBox="0 0 80 80" class="logo-svg">
           <defs>
             <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:#00d4ff" />
-              <stop offset="50%" style="stop-color:#7b2ff7" />
-              <stop offset="100%" style="stop-color:#ff2d87" />
+              <stop offset="0%" style="stop-color:#d6c7a1" />
+              <stop offset="100%" style="stop-color:#8a8474" />
             </linearGradient>
           </defs>
           <polygon points="40,5 75,65 5,65" fill="none" stroke="url(#logoGrad)" stroke-width="3"/>
@@ -30,7 +29,7 @@
         </svg>
       </div>
       <h1 class="loader-title">DepthWizard</h1>
-      <p class="loader-subtitle">Initializing 3D Terrain Engine...</p>
+      <p class="loader-subtitle">Preparing terrain view</p>
       <div class="loader-bar"><div class="loader-bar-fill"></div></div>
     </div>
   </div>
@@ -45,8 +44,8 @@
           <svg viewBox="0 0 40 40" class="brand-logo">
             <defs>
               <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#00d4ff" />
-                <stop offset="100%" style="stop-color:#7b2ff7" />
+                <stop offset="0%" style="stop-color:#d6c7a1" />
+                <stop offset="100%" style="stop-color:#8aa0a8" />
               </linearGradient>
             </defs>
             <polygon points="20,3 37,33 3,33" fill="none" stroke="url(#brandGrad)" stroke-width="2.5"/>
@@ -54,7 +53,7 @@
           </svg>
           <div>
             <h1 class="brand-name">DepthWizard</h1>
-            <span class="brand-tagline">ISRO • Disaster Triage</span>
+            <span class="brand-tagline">SIH26175 · Height workstation</span>
           </div>
         </div>
       </div>
@@ -63,8 +62,8 @@
         <!-- Upload Section -->
         <section class="panel" id="panel-upload">
           <div class="panel-header">
-            <span class="panel-icon">📡</span>
-            <h3>Image Upload</h3>
+            <span class="panel-index">01</span>
+            <h3>Source image</h3>
           </div>
           <div class="panel-body">
             <div id="drop-zone" class="drop-zone">
@@ -84,7 +83,7 @@
                 <span id="preview-size">—</span>
               </div>
               <button id="upload-process-btn" class="btn btn-primary">
-                <span class="btn-icon">⚡</span> Generate Depth Map
+                Generate height map
               </button>
               <button id="upload-clear-btn" class="btn btn-ghost btn-sm">Clear</button>
             </div>
@@ -94,37 +93,31 @@
         <!-- Sample Datasets Section -->
         <section class="panel" id="panel-samples">
           <div class="panel-header">
-            <span class="panel-icon">🗺️</span>
-            <h3>Sample Datasets</h3>
-            <span class="badge badge-green">Offline Ready</span>
+            <span class="panel-index">02</span>
+            <h3>Reference tiles</h3>
+            <span class="badge badge-green">Local</span>
           </div>
           <div class="panel-body">
             <div class="sample-grid">
               <button class="sample-card" data-sample="mountain_ridge">
-                <div class="sample-thumb" style="background: linear-gradient(135deg, #2d5016, #8B7355, #f0f0f0);">
-                  <span class="sample-emoji">🏔️</span>
-                </div>
+                <div class="sample-thumb thumb-ridge"><span class="sample-code">MR</span></div>
                 <div class="sample-info">
-                  <span class="sample-name">Mountain Ridge</span>
-                  <span class="sample-desc">Himalayan terrain</span>
+                  <span class="sample-name">Mountain ridge</span>
+                  <span class="sample-desc">High relief</span>
                 </div>
               </button>
               <button class="sample-card" data-sample="coastal_flood_plain">
-                <div class="sample-thumb" style="background: linear-gradient(135deg, #1a5276, #52be80, #f9e79f);">
-                  <span class="sample-emoji">🌊</span>
-                </div>
+                <div class="sample-thumb thumb-coast"><span class="sample-code">CF</span></div>
                 <div class="sample-info">
-                  <span class="sample-name">Coastal Flood Plain</span>
-                  <span class="sample-desc">River delta region</span>
+                  <span class="sample-name">Coastal plain</span>
+                  <span class="sample-desc">Low relief, water</span>
                 </div>
               </button>
               <button class="sample-card" data-sample="urban_settlement">
-                <div class="sample-thumb" style="background: linear-gradient(135deg, #515a5a, #7f8c8d, #aeb6bf);">
-                  <span class="sample-emoji">🏙️</span>
-                </div>
+                <div class="sample-thumb thumb-urban"><span class="sample-code">US</span></div>
                 <div class="sample-info">
-                  <span class="sample-name">Urban Settlement</span>
-                  <span class="sample-desc">City grid pattern</span>
+                  <span class="sample-name">Urban settlement</span>
+                  <span class="sample-desc">Built structures</span>
                 </div>
               </button>
             </div>
@@ -134,8 +127,8 @@
         <!-- Mission Controls -->
         <section class="panel" id="panel-controls">
           <div class="panel-header">
-            <span class="panel-icon">🎛️</span>
-            <h3>Mission Controls</h3>
+            <span class="panel-index">03</span>
+            <h3>Analysis</h3>
           </div>
           <div class="panel-body">
             <!-- Camera Mode -->
@@ -143,10 +136,10 @@
               <label class="control-label">Camera Mode</label>
               <div class="toggle-group">
                 <button class="toggle-btn active" data-mode="orbit" id="btn-orbit">
-                  <span>🔄</span> Orbit
+                  Inspect
                 </button>
                 <button class="toggle-btn" data-mode="drone" id="btn-drone">
-                  <span>🚁</span> WASD Drone
+                  Flythrough
                 </button>
               </div>
               <p class="control-hint" id="drone-hint" style="display:none;">WASD + Mouse • Q/E Up/Down • Shift = Boost</p>
@@ -155,7 +148,7 @@
             <!-- Auto Depth Scale Info -->
             <div class="control-group">
               <label class="control-label">
-                <span class="label-icon">📐</span> Depth Estimation
+                Height scale
                 <span class="control-value">Auto</span>
               </label>
               <div class="depth-info-card">
@@ -165,16 +158,28 @@
                 </div>
                 <div class="depth-info-row">
                   <span class="depth-info-label">Status</span>
-                  <span class="depth-info-val depth-auto-badge">⚡ Auto-calibrated</span>
+                  <span class="depth-info-val depth-auto-badge">From terrain</span>
                 </div>
               </div>
               <p class="control-hint">Depth is automatically calibrated from terrain analysis</p>
             </div>
 
+            <!-- Vertical Exaggeration -->
+            <div class="control-group">
+              <label class="control-label">
+                Vertical exaggeration
+                <span class="control-value" id="exaggeration-value">1.0×</span>
+              </label>
+              <input type="range" id="exaggeration-slider" class="slider" min="0.5" max="4" step="0.1" value="1" />
+              <div class="slider-labels">
+                <span>Flat</span><span>2×</span><span>4×</span>
+              </div>
+            </div>
+
             <!-- Flood Simulator -->
             <div class="control-group">
               <label class="control-label">
-                <span class="label-icon">🌊</span> Flood Water Level
+                Water level
                 <span class="control-value" id="flood-value">0%</span>
               </label>
               <input type="range" id="flood-slider" class="slider slider-blue" min="0" max="100" step="1" value="0" />
@@ -194,13 +199,13 @@
               <label class="control-label">Terrain Visualization</label>
               <div class="toggle-group toggle-group-3">
                 <button class="toggle-btn active" data-texture="satellite" id="btn-tex-satellite">
-                  🛰️ Satellite
+                  Image
                 </button>
                 <button class="toggle-btn" data-texture="depth" id="btn-tex-depth">
-                  🗻 Depth
+                  Height
                 </button>
                 <button class="toggle-btn" data-texture="slope" id="btn-tex-slope">
-                  ⚠️ Slope Risk
+                  Slope
                 </button>
               </div>
             </div>
@@ -210,10 +215,10 @@
               <label class="control-label">Render Mode</label>
               <div class="toggle-group">
                 <button class="toggle-btn active" id="btn-colored">
-                  🎨 Coloured Model
+                  Shaded
                 </button>
                 <button class="toggle-btn" id="btn-wireframe">
-                  📐 Wireframe Grid
+                  Wireframe
                 </button>
               </div>
             </div>
@@ -223,14 +228,14 @@
         <!-- Ground Anchor -->
         <section class="panel" id="panel-anchor">
           <div class="panel-header">
-            <span class="panel-icon">📌</span>
-            <h3>1-Point Ground Anchor</h3>
+            <span class="panel-index">04</span>
+            <h3>Height reference</h3>
           </div>
           <div class="panel-body">
             <p class="anchor-desc">Click any point on terrain, then enter known elevation to calibrate metric heights.</p>
             <div class="anchor-controls">
               <button id="anchor-pick-btn" class="btn btn-outline btn-sm">
-                <span>🎯</span> Pick Point on Map
+                Pick point on terrain
               </button>
               <div class="anchor-input-group" id="anchor-input-group" style="display:none;">
                 <label>Reference Elevation (m ASL)</label>
@@ -247,8 +252,8 @@
         <!-- Depth Map Output Preview -->
         <section class="panel" id="panel-output" style="display:none;">
           <div class="panel-header">
-            <span class="panel-icon">📊</span>
-            <h3>Depth Analysis</h3>
+            <span class="panel-index">05</span>
+            <h3>Derived products</h3>
           </div>
           <div class="panel-body">
             <div class="output-images">
@@ -262,6 +267,11 @@
               </div>
             </div>
             <div class="output-stats" id="output-stats"></div>
+            <div class="triage-summary" id="triage-summary" style="display:none;"></div>
+            <div class="export-row">
+              <button type="button" id="btn-export-depth" class="btn btn-outline btn-sm" disabled>⬇ Depth PNG</button>
+              <button type="button" id="btn-export-slope" class="btn btn-outline btn-sm" disabled>⬇ Slope PNG</button>
+            </div>
           </div>
         </section>
       </div>
@@ -336,7 +346,7 @@
       <!-- Landslide Simulation Panel -->
       <div id="landslide-panel" class="floating-panel" style="display:none;">
         <div class="fp-header">
-          <span>🏔️ Landslide Risk Analysis</span>
+          <span>🏔️ Slope Risk (from depth map)</span>
           <button id="close-landslide" class="fp-close">×</button>
         </div>
         <div class="fp-body">
