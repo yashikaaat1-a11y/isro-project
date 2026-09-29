@@ -271,6 +271,7 @@ async function handleFile(file) {
         gsd: j.geo?.pixel_size?.[0] ?? 1, anchorHint: null,
       };
       if (j.mock) toast('Backend is in mock mode — heights are procedural, not ML.', 'warn');
+      if (j.geo?.georeferenced) toast(`GeoTIFF georeferenced (${j.geo.crs_units}) — GSD set to ${j.geo.pixel_size[0].toFixed(2)} m/px`, 'ok');
     } catch (err) {
       if (isTiff) throw new Error(`GeoTIFF needs the backend (${err.message})`);
       $('loaderTitle').textContent = 'API unreachable · browser fallback';

@@ -81,9 +81,16 @@ def _read_geotiff(data: bytes) -> tuple[Image.Image, dict | None]:
         if scale and tie and len(tie) >= 6:
             h, w = arr.shape[:2]
             x0, y0 = float(tie[3]), float(tie[4])
+            px, py = float(scale[0]), float(scale[1])
+            geographic = px < 0.01 and abs(x0) <= 180 and abs(y0) <= 90
+            if geographic:
+                # Degrees -> approximate metres at the tile's latitude.
+                lat = np.radians(y0 - h * py / 2)
+                px, py = px * 111_320 * np.cos(lat), py * 110_574
             geo = {
                 "georeferenced": True,
-                "pixel_size": [float(scale[0]), float(scale[1])],
+                "crs_units": "degrees" if geographic else "projected",
+                "pixel_size": [round(px, 4), round(py, 4)],  # metres
                 "bounds": [x0, y0 - h * float(scale[1]), x0 + w * float(scale[0]), y0],
             }
 
