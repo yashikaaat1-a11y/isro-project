@@ -248,6 +248,7 @@ SCENES = [
         "scenario": "Cloudburst-triggered landslide triage",
         "fn": mountain_ridge,
         "seed": 7,
+        "gsd_m": 12.0,
         "anchor_hint": {"label": "Valley floor gauge station", "elevation_m": 1850, "meters_per_unit": 32},
     },
     {
@@ -257,6 +258,7 @@ SCENES = [
         "scenario": "Cyclone storm-surge & riverine inundation",
         "fn": coastal_delta,
         "seed": 21,
+        "gsd_m": 6.0,
         "anchor_hint": {"label": "Mean sea level (coastline)", "elevation_m": 0, "meters_per_unit": 0.12},
     },
     {
@@ -266,6 +268,7 @@ SCENES = [
         "scenario": "Structural collapse & urban flash-flood mapping",
         "fn": urban_settlement,
         "seed": 42,
+        "gsd_m": 0.6,
         "anchor_hint": {"label": "Airport runway", "elevation_m": 550, "meters_per_unit": 0.35},
     },
 ]

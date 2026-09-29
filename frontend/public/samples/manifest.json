@@ -4,6 +4,7 @@
     "name": "Mountain Ridge",
     "region": "Himalayan terrain \u00b7 Uttarakhand-type relief",
     "scenario": "Cloudburst-triggered landslide triage",
+    "gsd_m": 12.0,
     "anchor_hint": {
       "label": "Valley floor gauge station",
       "elevation_m": 1850,
@@ -66,6 +67,7 @@
     "name": "Coastal Flood Plain",
     "region": "River delta \u00b7 Godavari/Mahanadi-type distributaries",
     "scenario": "Cyclone storm-surge & riverine inundation",
+    "gsd_m": 6.0,
     "anchor_hint": {
       "label": "Mean sea level (coastline)",
       "elevation_m": 0,
@@ -128,6 +130,7 @@
     "name": "Urban Settlement",
     "region": "Dense urban grid \u00b7 riverside city",
     "scenario": "Structural collapse & urban flash-flood mapping",
+    "gsd_m": 0.6,
     "anchor_hint": {
       "label": "Airport runway",
       "elevation_m": 550,

@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DepthWizard · ISRO Disaster Triage</title>
+  <meta name="description" content="Single-view height estimation and 3D flythrough for disaster triage (SIH26175)." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23050b18'/%3E%3Cpath d='M4 23l7-9 5 6 4-4 8 7z' fill='%2322d3ee'/%3E%3Ccircle cx='23' cy='9' r='3' fill='%23ff9933'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- Boot splash -->
+  <div id="splash">
+    <div class="splash-inner">
+      <svg class="splash-orbit" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="22" class="planet" />
+        <ellipse cx="60" cy="60" rx="52" ry="18" class="orbit" />
+        <circle r="4" class="sat"><animateMotion dur="2.4s" repeatCount="indefinite" path="M8,60 a52,18 0 1,0 104,0 a52,18 0 1,0 -104,0" /></circle>
+      </svg>
+      <div class="splash-title">Depth<span>Wizard</span></div>
+      <div class="splash-sub">Single-view height estimation · 3D disaster triage</div>
+      <div class="splash-bar"><i></i></div>
+    </div>
+  </div>
+
+  <div id="app">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="menuBtn" aria-label="Toggle controls">☰</button>
+      <div class="brand">
+        <svg viewBox="0 0 32 32" class="brand-mark" aria-hidden="true">
+          <path d="M3 24l7.5-10 5 6 4.5-5 9 9z" fill="url(#g1)" />
+          <circle cx="23.5" cy="8.5" r="3.2" fill="#ff9933" />
+          <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee" /><stop offset="1" stop-color="#6366f1" /></linearGradient></defs>
+        </svg>
+        <div>
+          <div class="brand-name">Depth<b>Wizard</b></div>
+          <div class="brand-sub">Single-View Height Estimation &amp; 3D Flythrough</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag saffron">SIH26175</span>
+        <span class="tag">ISRO · Dept. of Space</span>
+        <span class="tag">Disaster Management</span>
+      </div>
+      <div class="top-right">
+        <div class="engine-pill" id="enginePill" title="Inference engine status"><i></i><span>Checking engine…</span></div>
+        <button class="icon-btn" id="shotBtn" title="Capture screenshot (P)">⎙</button>
+        <button class="icon-btn" id="helpBtn" title="Shortcuts &amp; method (H)">?</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+      <section class="panel">
+        <h2><em>01</em> Data Ingest</h2>
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff" hidden />
+          <div class="dz-icon">⇪</div>
+          <div class="dz-title">Drop a single optical tile</div>
+          <div class="dz-sub">Satellite · aerial · drone — PNG / JPEG / GeoTIFF</div>
+        </label>
+        <div class="sub-h">Offline mission cache <span class="muted">· pre-baked, zero latency</span></div>
+        <div class="samples" id="samples"></div>
+      </section>
+
+      <section class="panel">
+        <h2><em>02</em> Visual Layer</h2>
+        <div class="seg seg-4" id="layerSeg">
+          <button data-layer="optical" class="on">Optical</button>
+          <button data-layer="hypso">Hypso</button>
+          <button data-layer="slope">Slope Risk</button>
+          <button data-layer="depth">Depth</button>
+        </div>
+        <div class="row toggles">
+          <label class="switch"><input type="checkbox" id="contourTgl" /><span></span>Contours</label>
+          <label class="switch"><input type="checkbox" id="wireTgl" /><span></span>Wireframe</label>
+          <label class="switch"><input type="checkbox" id="skirtTgl" checked /><span></span>Base</label>
+        </div>
+        <div class="field">
+          <div class="field-h"><span>Mesh density</span><b id="segVal">256 × 256</b></div>
+          <div class="seg seg-3" id="segSeg">
+            <button data-seg="128">128</button>
+            <button data-seg="256" class="on">256</button>
+            <button data-seg="512">512</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2><em>03</em> Mission Controls</h2>
+        <div class="field">
+          <div class="field-h"><span>Vertical exaggeration</span><b id="exagVal">3.0×</b></div>
+          <input type="range" id="exag" min="0.1" max="20" step="0.1" value="3" />
+          <div class="ticks"><span>0.1×</span><span>5×</span><span>10×</span><span>20×</span></div>
+        </div>
+        <div class="field flood">
+          <div class="field-h"><span><i class="dot water"></i>Flood plane · water rise</span><b id="floodVal">OFF</b></div>
+          <input type="range" id="flood" min="0" max="100" step="0.25" value="0" class="water-range" />
+          <div class="btn-row">
+            <button class="btn water" id="surgeBtn">▶ Simulate surge</button>
+            <button class="btn ghost" id="floodReset">Drain</button>
+          </div>
+          <div class="flood-stats">
+            <div><span>Inundated</span><b id="fsPct">0.0%</b></div>
+            <div><span>Area</span><b id="fsArea">—</b></div>
+            <div><span>Volume</span><b id="fsVol">—</b></div>
+          </div>
+          <canvas id="histo" height="64"></canvas>
+          <div class="hint">Histogram of relative height. The blue band is everything the water plane submerges.</div>
+        </div>
+        <div class="field">
+          <div class="field-h"><span>Solar azimuth / elevation</span><b id="sunVal">135° · 42°</b></div>
+          <input type="range" id="sunAz" min="0" max="360" step="1" value="135" />
+          <input type="range" id="sunEl" min="5" max="85" step="1" value="42" />
+        </div>
+      </section>
+
+      <section class="panel anchor-panel" id="anchorPanel">
+        <h2><em>04</em> Ground Anchor <span class="pill-mini" id="anchorState">rDSM</span></h2>
+        <p class="note">Monocular depth has an unknown projective scale. We never print metres until you ground it with
+          a known reference point.</p>
+        <div class="formula">Z<sub>m</sub>(x,y) = Z<sub>a</sub> + (d(x,y) − d<sub>a</sub>) × S</div>
+        <div class="btn-row">
+          <button class="btn" id="pickAnchor">◎ Pick anchor point</button>
+          <button class="btn ghost" id="pickAnchor2" title="Solve S from a second known point">◎₂ Solve S</button>
+        </div>
+        <div class="anchor-read" id="anchorRead">No anchor · click “Pick anchor point”, then a spot on the terrain.</div>
+        <div class="grid2">
+          <label>Z<sub>a</sub> known elevation (m ASL)<input type="number" id="zAnchor" value="550" step="1" /></label>
+          <label>S metres / rel. unit<input type="number" id="sScale" value="1.0" step="0.01" min="0" /></label>
+          <label>Z₂ 2nd point (m ASL)<input type="number" id="z2" placeholder="optional" step="1" /></label>
+          <label>GSD metres / pixel<input type="number" id="gsd" value="1" step="0.1" min="0.01" /></label>
+        </div>
+        <div class="presets" id="anchorHint"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="applyAnchor" disabled>Apply mDSM grounding</button>
+          <button class="btn ghost" id="clearAnchor">Clear</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2><em>05</em> Analysis &amp; Export</h2>
+        <div class="btn-row">
+          <button class="btn" id="profileBtn">⟋ Elevation profile A→B</button>
+        </div>
+        <div class="btn-row three">
+          <button class="btn ghost" id="exportShot">Screenshot</button>
+          <button class="btn ghost" id="exportDepth">Heightmap</button>
+          <button class="btn ghost" id="exportReport">Report</button>
+        </div>
+      </section>
+      <div class="side-foot">Built for Smart India Hackathon · Problem SIH26175</div>
+    </aside>
+
+    <main class="viewport" id="viewport">
+      <canvas id="scene"></canvas>
+
+      <div class="banner rdsm" id="banner">
+        <div class="banner-icon">⚠</div>
+        <div>
+          <div class="banner-title" id="bannerTitle">Mode A · Unanchored Relative Depth (rDSM)</div>
+          <div class="banner-sub" id="bannerSub">0–100 normalized scale — suitable for topographic shape analysis &amp; flood-flow triage. Not metric.</div>
+        </div>
+      </div>
+
+      <div class="cam-bar">
+        <div class="seg" id="camSeg">
+          <button data-cam="orbit" class="on" title="Orbit (O)">⟲ Orbit</button>
+          <button data-cam="drone" title="Drone flight (F)">✈ Drone</button>
+          <button data-cam="cinematic" title="Cinematic (C)">🎬 Cinematic</button>
+        </div>
+        <div class="seg small" id="presetSeg">
+          <button data-preset="iso" title="Isometric (R)">Iso</button>
+          <button data-preset="top">Top</button>
+          <button data-preset="low">Low</button>
+          <button data-preset="side">Side</button>
+        </div>
+      </div>
+
+      <div class="tool-hint" id="toolHint"></div>
+
+      <div class="telemetry" id="telemetry">
+        <div class="tl-h">Cursor telemetry</div>
+        <div class="tl-grid">
+          <span>Pixel</span><b id="tPix">—</b>
+          <span>Rel. height</span><b id="tRel">—</b>
+          <span>Elevation</span><b id="tMet" class="muted">unanchored</b>
+          <span>Slope</span><b id="tSlope">—</b>
+          <span>Status</span><b id="tWet">—</b>
+        </div>
+      </div>
+
+      <div class="legend" id="legend"></div>
+
+      <div class="minimap" id="minimapWrap">
+        <canvas id="minimap" width="180" height="180"></canvas>
+        <div class="mm-label">Tactical overview</div>
+      </div>
+
+      <div class="drone-hud" id="droneHud">
+        <div class="crosshair"></div>
+        <div class="dh-left"><span>AGL</span><b id="dAlt">0</b></div>
+        <div class="dh-right"><span>SPD</span><b id="dSpd">0</b></div>
+        <div class="dh-top"><span>HDG</span><b id="dHdg">000°</b></div>
+        <div class="dh-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Space</kbd>/<kbd>C</kbd> climb/descend · <kbd>Shift</kbd> boost · wheel = cruise speed · click-drag or pointer-lock to look · <kbd>Esc</kbd>/<kbd>O</kbd> exit</div>
+      </div>
+
+      <div class="profile" id="profilePanel">
+        <div class="profile-h">
+          <span>Elevation cross-section <b id="profMeta"></b></span>
+          <button class="icon-btn small" id="profClose">✕</button>
+        </div>
+        <canvas id="profile"></canvas>
+      </div>
+
+      <div class="loader" id="loader">
+        <div class="loader-card">
+          <div class="radar"><i></i></div>
+          <div class="loader-title" id="loaderTitle">Running Depth Anything V2</div>
+          <ol class="loader-steps" id="loaderSteps">
+            <li>Uploading optical tile</li>
+            <li>Vision-transformer depth inference</li>
+            <li>Normalising heightmap · Sobel slope</li>
+            <li>Building 3D terrain</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="markers" id="markers"></div>
+    </main>
+
+    <footer class="ribbon">
+      <div class="rb mode" id="rbMode"><span>Mode</span><b>Relative DSM (rDSM)</b></div>
+      <div class="rb"><span>Engine</span><b id="rbEngine">—</b></div>
+      <div class="rb"><span>Source</span><b id="rbSource">—</b></div>
+      <div class="rb"><span>Grid</span><b id="rbRes">—</b></div>
+      <div class="rb"><span>Inference</span><b id="rbInf">—</b></div>
+      <div class="rb"><span>Dyn. range</span><b id="rbDyn">—</b></div>
+      <div class="rb"><span>Steep terrain</span><b id="rbSteep">—</b></div>
+      <div class="rb grow"><span>Range</span><b id="rbRange">—</b></div>
+      <div class="rb"><span>FPS</span><b id="rbFps">—</b></div>
+    </footer>
+  </div>
+
+  <div class="modal" id="help" hidden>
+    <div class="modal-card">
+      <button class="icon-btn small close" data-close>✕</button>
+      <h3>DepthWizard · field manual</h3>
+      <div class="help-grid">
+        <div>
+          <h4>Keyboard</h4>
+          <ul class="keys">
+            <li><kbd>1</kbd>–<kbd>4</kbd> Optical / Hypso / Slope risk / Depth</li>
+            <li><kbd>O</kbd> Orbit · <kbd>F</kbd> Drone · <kbd>C</kbd> Cinematic</li>
+            <li><kbd>R</kbd> Reset view · <kbd>T</kbd> Top-down</li>
+            <li><kbd>[</kbd> <kbd>]</kbd> Lower / raise flood plane</li>
+            <li><kbd>+</kbd> <kbd>−</kbd> Vertical exaggeration</li>
+            <li><kbd>K</kbd> Toggle contours · <kbd>P</kbd> Screenshot</li>
+            <li><kbd>Esc</kbd> Cancel tool / leave drone</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Method</h4>
+          <p>A single optical tile is passed through <b>Depth Anything V2-Small</b>, a zero-shot monocular depth
+            vision transformer. Its relative inverse-depth output is robustly stretched to an 8-bit heightmap and
+            projected as a displacement map on a 256×256 mesh.</p>
+          <p>Single-view depth is <b>scale-ambiguous</b>. DepthWizard is <b>fail-closed</b>: heights stay on a 0–100
+            relative scale until you ground them with a known point (Z<sub>a</sub>) and a scale S, which can itself be
+            solved from a second known point. Slope classes switch from relative ranking to real degrees once
+            grounded.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
