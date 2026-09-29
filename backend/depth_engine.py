@@ -62,7 +62,7 @@ class NeuralDepthEngine:
         arr = pred.squeeze().detach().cpu().numpy().astype(np.float64)
         if arr.shape != (image.height, image.width):
             arr = np.asarray(
-                Image.fromarray(arr.astype(np.float32), mode="F").resize(image.size, Image.BICUBIC),
+                Image.fromarray(arr.astype(np.float32)).resize(image.size, Image.BICUBIC),
                 dtype=np.float64,
             )
         return arr

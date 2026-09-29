@@ -36,7 +36,7 @@ def fbm(n: int, rng: np.random.Generator, octaves: int = 7, base: int = 4,
         if cells > n:
             break
         g = rng.standard_normal((cells, cells)).astype(np.float32)
-        layer = np.asarray(Image.fromarray(g, "F").resize((n, n), Image.BICUBIC), dtype=np.float64)
+        layer = np.asarray(Image.fromarray(g).resize((n, n), Image.BICUBIC), dtype=np.float64)
         if ridged and o < 4:
             layer = 1.0 - np.abs(np.tanh(layer * 0.8))
             layer = layer ** 3
@@ -161,7 +161,7 @@ def coastal_delta(rng):
     for j in range(0, n, cell):
         for i in range(0, n, cell):
             parcels[j:j + cell, i:i + cell] = rng.uniform()
-    parcels = np.asarray(Image.fromarray(parcels.astype(np.float32), "F").rotate(14, Image.NEAREST, fillcolor=0.5),
+    parcels = np.asarray(Image.fromarray(parcels.astype(np.float32)).rotate(14, Image.NEAREST, fillcolor=0.5),
                          dtype=np.float64)
     field_col = ramp(parcels, [0, 0.35, 0.6, 0.8, 1],
                      [[74, 112, 52], [104, 140, 60], [150, 160, 88], [178, 164, 110], [96, 128, 70]])
@@ -284,7 +284,7 @@ def main():
         img.save(OUT / f"{sc['id']}.jpg", quality=88)
         img.resize((256, 256), Image.LANCZOS).save(OUT / f"{sc['id']}_thumb.jpg", quality=82)
         depth = analytics.normalize_to_uint8(
-            np.asarray(Image.fromarray(h.astype(np.float32), "F").resize((DEP, DEP), Image.LANCZOS)), 0, 100)
+            np.asarray(Image.fromarray(h.astype(np.float32)).resize((DEP, DEP), Image.LANCZOS)), 0, 100)
         Image.fromarray(depth).save(OUT / f"{sc['id']}_depth.png", optimize=True)
         slope = analytics.slope_to_uint8(analytics.slope_magnitude(depth))
         stats = analytics.compute_stats(depth, slope)
