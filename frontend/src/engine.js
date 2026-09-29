@@ -44,7 +44,7 @@ export class Engine {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.Fog(0x0b1a33, 180, 520);
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
-    this.camera.position.set(0, 70, 95);
+    this.camera.position.set(90, 95, 115);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -84,10 +84,10 @@ export class Engine {
     this.sun = sun;
     this.setSun(135, 42);
 
-    const grid = new THREE.GridHelper(900, 90, 0x1e3a5f, 0x10213b);
+    const grid = new THREE.GridHelper(420, 42, 0x1e3a5f, 0x10213b);
     grid.position.y = -SLAB_DEPTH - 0.05;
     grid.material.transparent = true;
-    grid.material.opacity = 0.55;
+    grid.material.opacity = 0.35;
     s.add(grid);
     this.grid = grid;
   }

@@ -149,6 +149,8 @@ function install(tile) {
   engine.setTile(f, f.depthCanvas(), tile.texture);
   clearAnchor(true);
   clearProfile();
+  ['tPix', 'tRel', 'tSlope', 'tWet'].forEach((id) => { $(id).textContent = '—'; $(id).style.color = ''; });
+  $('tMet').textContent = 'unanchored'; $('tMet').className = 'muted';
   $('gsd').value = tile.gsd ?? 1;
   const hint = tile.anchorHint;
   $('anchorHint').innerHTML = hint

@@ -335,7 +335,7 @@ input.water-range::-webkit-slider-thumb { border-color: #38bdf8; box-shadow: 0 0
 .help-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; }
 .keys { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.1; }
 
-.toasts { position: fixed; top: 70px; right: 16px; z-index: 60; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toasts { position: fixed; top: 150px; left: 366px; align-items: flex-start; z-index: 60; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .toast {
   padding: 10px 14px; border-radius: 10px; background: rgba(10, 20, 38, .95); border: 1px solid var(--line-strong); font-size: 13px;
   max-width: 340px; box-shadow: 0 10px 30px rgba(0, 0, 0, .4); animation: tin .3s ease; border-left: 3px solid var(--cyan);
@@ -352,6 +352,7 @@ input.water-range::-webkit-slider-thumb { border-color: #38bdf8; box-shadow: 0 0
   .telemetry { display: none; }
 }
 @media (max-width: 860px) {
+  .toasts { left: 12px; right: 12px; top: auto; bottom: 44px; }
   #app { grid-template-columns: 1fr; grid-template-areas: 'top' 'view' 'rib'; }
   .only-mobile { display: grid; }
   .brand-sub { display: none; }
@@ -361,9 +362,11 @@ input.water-range::-webkit-slider-thumb { border-color: #38bdf8; box-shadow: 0 0
     transform: translateX(-100%); transition: transform .25s ease; box-shadow: 20px 0 40px rgba(0, 0, 0, .5);
   }
   .sidebar.open { transform: none; }
-  .banner { top: 10px; padding: 8px 12px; }
+  .banner { top: 10px; left: 12px; right: 12px; transform: none; max-width: none; padding: 8px 12px; }
+  .banner-title { font-size: 12.5px; }
+  .banner-icon { width: 28px; height: 28px; font-size: 16px; }
   .banner-sub { display: none; }
-  .cam-bar { top: 70px; }
+  .cam-bar { top: 72px; }
   .minimap canvas { width: 120px; height: 120px; }
   .legend { bottom: 164px; }
   .dh-keys { display: none; }

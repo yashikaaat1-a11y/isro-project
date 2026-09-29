@@ -67,7 +67,7 @@ export class FlightController {
       const ground = this.e.heightAtWorld(cam.position.x, cam.position.z);
       if (cam.position.y - ground > 30) {
         // Drop into a low-altitude pass near the tile edge.
-        cam.position.set(0, this.e.dispScale + 8, PLANE * this.e.aspect * 0.55);
+        cam.position.set(0, this.e.dispScale + 6, PLANE * this.e.aspect * 0.46);
         this.yaw = 0; this.pitch = -0.18;
       }
       this.cruise = this.cruise || 12;
@@ -99,10 +99,10 @@ export class FlightController {
   preset(name) {
     const d = this.e.dispScale, a = this.e.aspect;
     const presets = {
-      iso: [new THREE.Vector3(62, 58 + d, 72 * a + 10), new THREE.Vector3(0, d * 0.3, 0)],
-      top: [new THREE.Vector3(0, 125 * Math.max(1, a), 0.01), new THREE.Vector3(0, 0, 0)],
+      iso: [new THREE.Vector3(78, 72 + d, 92 * a + 12), new THREE.Vector3(0, d * 0.3, 0)],
+      top: [new THREE.Vector3(0, 140 * Math.max(1, a), 0.01), new THREE.Vector3(0, 0, 0)],
       low: [new THREE.Vector3(-58, d + 10, 55 * a), new THREE.Vector3(10, d * 0.4, -10)],
-      side: [new THREE.Vector3(0, d + 14, 118 * a), new THREE.Vector3(0, d * 0.4, 0)],
+      side: [new THREE.Vector3(0, d + 18, 135 * a), new THREE.Vector3(0, d * 0.4, 0)],
     };
     const p = presets[name] || presets.iso;
     this.flyTo(p[0], p[1]);
