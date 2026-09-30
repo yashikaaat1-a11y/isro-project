@@ -74,8 +74,8 @@ renderer.toneMappingExposure = 1.2;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0e17);
-scene.fog = new THREE.FogExp2(0x0a0e17, 0.006);
+scene.background = new THREE.Color(0x1c2433);
+scene.fog = new THREE.FogExp2(0x1c2433, 0.006);
 
 // Camera
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
@@ -126,7 +126,7 @@ scene.add(fillLight);
 // ═══════════════════════════════════════════════════════════════════════════
 // GRID & HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
-const gridHelper = new THREE.GridHelper(120, 30, 0x1a2a3a, 0x0f1a2a);
+let gridHelper = new THREE.GridHelper(120, 30, 0x3a4d66, 0x2a3a4e);
 gridHelper.position.y = -0.1;
 scene.add(gridHelper);
 
@@ -574,7 +574,7 @@ function applyDepthScale() {
   state.depthScale = scale;
   terrainMaterial.displacementScale = scale;
   wireframeMaterial.displacementScale = scale;
-  updateDepthInfo(scale);
+  updateDepthInfo(state.baseDepthScale);
 }
 
 function computeSubmergedAreaPercent(floodVal) {
@@ -1731,7 +1731,39 @@ function animate() {
 // ═══════════════════════════════════════════════════════════════════════════
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════
+const SCENE_THEMES = {
+  dark: { scene: 0x1c2433, gridA: 0x3a4d66, gridB: 0x2a3a4e, skyTop: 0x141c2b, skyBottom: 0x2c405c },
+  light: { scene: 0xdfe6ee, gridA: 0xa8b8c8, gridB: 0xc5d0db, skyTop: 0xc5d4e4, skyBottom: 0xe8eef5 },
+};
+
+function applyColorTheme(name) {
+  const theme = name === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem('depthwizard-theme', theme);
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.themeChoice === theme);
+  });
+
+  const colors = SCENE_THEMES[theme];
+  scene.background.setHex(colors.scene);
+  scene.fog.color.setHex(colors.scene);
+  skyMat.uniforms.topColor.value.setHex(colors.skyTop);
+  skyMat.uniforms.bottomColor.value.setHex(colors.skyBottom);
+  scene.remove(gridHelper);
+  gridHelper.geometry.dispose();
+  const gridMaterials = Array.isArray(gridHelper.material) ? gridHelper.material : [gridHelper.material];
+  gridMaterials.forEach((material) => material.dispose());
+  gridHelper = new THREE.GridHelper(120, 30, colors.gridA, colors.gridB);
+  gridHelper.position.y = -0.1;
+  scene.add(gridHelper);
+}
+
 function init() {
+  applyColorTheme(document.documentElement.dataset.theme || 'dark');
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => applyColorTheme(btn.dataset.themeChoice));
+  });
+
   onResize();
 
   // Generate slope for default terrain

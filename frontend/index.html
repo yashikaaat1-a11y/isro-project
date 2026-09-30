@@ -1,6 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
+  <script>
+    (function () {
+      var saved = localStorage.getItem('depthwizard-theme');
+      document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="DepthWizard — Single-View Height Estimation & 3D Flythrough for ISRO Disaster Management" />
@@ -55,6 +61,10 @@
             <h1 class="brand-name">DepthWizard</h1>
             <span class="brand-tagline">SIH26175 · Height workstation</span>
           </div>
+        </div>
+        <div class="theme-switch" role="group" aria-label="Color theme">
+          <button type="button" class="theme-btn active" id="theme-dark" data-theme-choice="dark">Dark</button>
+          <button type="button" class="theme-btn" id="theme-light" data-theme-choice="light">Light</button>
         </div>
       </div>
 
@@ -174,6 +184,7 @@
               <div class="slider-labels">
                 <span>Flat</span><span>2×</span><span>4×</span>
               </div>
+              <p class="control-hint">View stretch only. Slope, flood area, and the height values do not change.</p>
             </div>
 
             <!-- Flood Simulator -->
