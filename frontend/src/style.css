@@ -1103,8 +1103,9 @@ html, body {
   position: absolute;
   top: 60px;
   right: 16px;
-  width: 260px;
-  background: rgba(17, 24, 39, 0.92);
+  width: 280px;
+  background: var(--chrome-bg);
+  color: var(--text-primary);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -1122,10 +1123,12 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
 }
 
 .fp-close {
@@ -1151,9 +1154,10 @@ html, body {
 .risk-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.7rem;
-  color: var(--text-secondary);
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .risk-dot {
@@ -1166,7 +1170,13 @@ html, body {
 .risk-stats {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+}
+
+.floating-panel .stat-row {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .stat-row {

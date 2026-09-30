@@ -100,31 +100,46 @@ app.add_middleware(
 
 def generate_mock_depth(width: int, height: int) -> np.ndarray:
     """
-    Generate a procedural mock depth map with realistic terrain features.
-    Uses multiple octaves of noise-like patterns to simulate elevation.
+    Procedural fallback when no RGB image is available.
     """
     y_grid, x_grid = np.mgrid[0:height, 0:width].astype(np.float32)
     cx, cy = width / 2, height / 2
 
-    # Base radial gradient (mountain peak in center)
     dist = np.sqrt((x_grid - cx) ** 2 + (y_grid - cy) ** 2)
     max_dist = np.sqrt(cx**2 + cy**2)
     base = 1.0 - (dist / max_dist)
 
-    # Add ridge features
     ridge1 = np.sin(x_grid * 0.05 + y_grid * 0.03) * 0.3
     ridge2 = np.cos(x_grid * 0.08 - y_grid * 0.06) * 0.15
     ridge3 = np.sin((x_grid + y_grid) * 0.04) * 0.2
-
-    # Combine
     depth = base + ridge1 + ridge2 + ridge3
 
-    # Add a river valley
     valley_x = cx + 30 * np.sin(y_grid * 0.02)
     valley_mask = np.exp(-((x_grid - valley_x) ** 2) / (2 * 20**2))
     depth -= valley_mask * 0.4
 
-    # Normalize to 0-255
+    depth = (depth - depth.min()) / (depth.max() - depth.min() + 1e-8)
+    return (depth * 255).astype(np.uint8)
+
+
+def generate_mock_depth_from_image(image: Image.Image) -> np.ndarray:
+    """
+    Image-aware mock depth: luminance + mild structure (demo when GPU model unavailable).
+    Brighter areas tend toward higher relative elevation — common RS heuristic.
+    """
+    rgb = np.array(image.convert("RGB"), dtype=np.float32)
+    h, w = rgb.shape[:2]
+    luminance = 0.299 * rgb[:, :, 0] + 0.587 * rgb[:, :, 1] + 0.114 * rgb[:, :, 2]
+    lum = (luminance - luminance.min()) / (luminance.max() - luminance.min() + 1e-8)
+
+    y_grid, x_grid = np.mgrid[0:h, 0:w].astype(np.float32)
+    structure = (
+        np.sin(x_grid * 0.045 + y_grid * 0.032) * 0.04
+        + np.cos(x_grid * 0.07 - y_grid * 0.05) * 0.03
+        + np.sin((x_grid + y_grid) * 0.038) * 0.025
+    )
+
+    depth = np.clip(0.78 * lum + 0.22 * (lum + structure), 0, 1)
     depth = (depth - depth.min()) / (depth.max() - depth.min() + 1e-8)
     return (depth * 255).astype(np.uint8)
 
@@ -209,9 +224,8 @@ async def generate_depth(
     pipe = load_model()
 
     if pipe is None:
-        # Mock mode: generate procedural depth
-        logger.info("Generating MOCK depth map...")
-        depth_array = generate_mock_depth(orig_w, orig_h)
+        logger.info("Generating image-aware MOCK depth map...")
+        depth_array = generate_mock_depth_from_image(image)
     else:
         # Real inference
         logger.info("Running Depth Anything V2 inference...")
@@ -230,7 +244,7 @@ async def generate_depth(
                 )
         except Exception as e:
             logger.error(f"Inference failed: {e}, falling back to mock")
-            depth_array = generate_mock_depth(orig_w, orig_h)
+            depth_array = generate_mock_depth_from_image(image)
 
     # ── 3. Compute derived products ────────────────────────────────────────
     depth_b64 = array_to_base64_png(depth_array)
